@@ -121,7 +121,7 @@ static void HVDriver_init( void )
     TIM2->PSC = 0x0000;//不分频，48Mhz为tim2时钟
     TIM2->ATRLR = (uint32_t)160;//周期为160次计数，因此为300khz输出。
 
-    TIM2->CH1CVR = (uint32_t)0;//50%占空比测试，后面记得初始化的时候改成0.
+    TIM2->CH1CVR = (uint32_t)0;//开始占空比为0
 
     TIM2->BDTR |= TIM_MOE;
     TIM2->CTLR1 |= TIM_CEN;//启动定时器。
@@ -165,8 +165,6 @@ static void PWM_Setduty(uint32_t duty)
 
 int main( void )
 {   
-    uint32_t duty = 0;
-
     SystemInit(); //初始化系统时钟。ch32fun的sdk默认跑在HSI-PLL-48mhz,外设不分频。
     GPIO_init();
     ADC_init();
@@ -193,13 +191,15 @@ void ADC1_IRQHandler(void)
 
     /*PI控制器部分。*/
 
-    int32_t error = adcval-30;//计算误差
+    int32_t error = 30-adcval;//计算误差
     int32_t CO = 0;//控制输出。
     static int32_t intergal;//积分项
 
     intergal += (error>>2); //积分系数为0.25
+
+    //控制积分上下限
     intergal = intergal > 160 ? 160 : intergal;
-    intergal = intergal < -160 ? -160 :intergal;
+    intergal = intergal < -20 ? -20 :intergal;
 
     CO = (error<<2) + intergal;//比例系数为4
 
