@@ -9,6 +9,7 @@
 uint16_t adcval = 0;
 uint32_t adcinterrupttimes = 0;
 
+
 void ADC1_IRQHandler(void)
 	__attribute__((interrupt))
 	__attribute__((section(".srodata")));
@@ -24,7 +25,7 @@ void ADC1_IRQHandler(void)
  * PD4为升压电路的控制脚，由TIM2
  * 控制。
  * 
- * PC4为升压电路监测脚，也是ADC的channel2.
+ * PC4为升压电路监测脚，是ADC的channel2.
  */
 static void GPIO_init( void )
 {
@@ -33,6 +34,10 @@ static void GPIO_init( void )
     //PA2设置为推挽输出
     GPIOA->CFGLR &= ~(0xf<<(4*2));
 	GPIOA->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP)<<(4*2);
+    
+    //PD4设置为推挽输出
+    GPIOD->CFGLR &= ~(0xf<<(4*2));
+	GPIOD->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP)<<(4*2);
 
     //PA1设置为复用型推挽输出。
     GPIOA->CFGLR &= ~(0xf<<(4*1));
@@ -116,7 +121,7 @@ static void HVDriver_init( void )
     TIM2->PSC = 0x0000;//不分频，48Mhz为tim2时钟
     TIM2->ATRLR = (uint32_t)160;//周期为160次计数，因此为300khz输出。
 
-    TIM2->CH1CVR = (uint32_t)150;//50%占空比测试，后面记得初始化的时候改成0.
+    TIM2->CH1CVR = (uint32_t)0;//50%占空比测试，后面记得初始化的时候改成0.
 
     TIM2->BDTR |= TIM_MOE;
     TIM2->CTLR1 |= TIM_CEN;//启动定时器。
@@ -169,9 +174,10 @@ int main( void )
     PWM_init();
     HVDriver_init();
     for(;;)
-    {  
-        //printf("adc value is %d, trigger time is %d.\n",adcval,adcinterrupttimes);
-        adcinterrupttimes = 0;
+    {   
+        PWM_Setduty(PWM_PERIOD>>2);
+        Delay_Ms(2550);
+        PWM_Setduty(PWM_PERIOD>>4);
         Delay_Ms(2550);
     }
 }
@@ -182,8 +188,25 @@ int main( void )
 void ADC1_IRQHandler(void)
 {
     ADC1->STATR = 0;//清空标志位
-    adcval = ADC1->RDATAR;
-    adcinterrupttimes++;
-    return;
+    adcval = ADC1->RDATAR;//读取ADC值
+
+
+    /*PI控制器部分。*/
+
+    int32_t error = adcval-30;//计算误差
+    int32_t CO = 0;//控制输出。
+    static int32_t intergal;//积分项
+
+    intergal += (error>>2); //积分系数为0.25
+    intergal = intergal > 160 ? 160 : intergal;
+    intergal = intergal < -160 ? -160 :intergal;
+
+    CO = (error<<2) + intergal;//比例系数为4
+
+    //限制CO上下限。
+    CO = CO >= 128 ? 128 : CO;
+    CO = CO <= 0 ? 0 : CO; 
+
+    TIM2->CH1CVR = CO;
 
 }
