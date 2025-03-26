@@ -65,7 +65,7 @@ static void ADC_init( void )
     ADC1->RSQR1 = 0;
 	ADC1->RSQR3 = 2;//只开一个通道，转换pc4，也就是A2。后续可考虑加上DMA并测vref。vref为1.2V内置基准，测它可得VCC电压。
 
-    ADC1->SAMPTR2=0<<(3*2);//设置采样源的采样时间，注意这里是设置采样源（0-9）的时间，并非规则组内通道的时间。
+    ADC1->SAMPTR2=1<<(3*2);//设置采样源的采样时间，注意这里是设置采样源（0-9）的时间，并非规则组内通道的时间。
 
     ADC1->CTLR1 |= ADC_EOCIE | ADC_SCAN;//开启转换结束中断。
 
