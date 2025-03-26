@@ -21,6 +21,7 @@ void ADC1_IRQHandler(void)
  * PA1和PA2为H桥的控制脚
  * PA1由timer1ch2直接控制
  * PA2由DMA控制。
+ * PD2由DMA控制。
  * 
  * PD4为升压电路的控制脚，由TIM2
  * 控制。
@@ -35,7 +36,7 @@ static void GPIO_init( void )
     GPIOA->CFGLR &= ~(0xf<<(4*2));
 	GPIOA->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP)<<(4*2);
     
-    //PD4设置为推挽输出
+    //PD2设置为推挽输出
     GPIOD->CFGLR &= ~(0xf<<(4*2));
 	GPIOD->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP)<<(4*2);
 
@@ -95,13 +96,13 @@ static void DMA_init( void )
     //配置channel2，32位到32位，从存储器搬到外设，单次操作，无中断，最高优先级，开启循环模式。要开循环模式，不开的话搬一次之后数据数量和地址都清零了就没法继续触发了。
     DMA1_Channel2->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word | DMA_DIR_PeripheralDST | DMA_Mode_Circular;
     DMA1_Channel2->CNTR = 0x0001;//数据传输数量，就一个。
-    DMA1_Channel2->PADDR = (uint32_t)&(GPIOA->BSHR); //存储器和外设的地址，外设是GPIOA的置位寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再当通用IO口，但ch32v003本来就只有PA1和PA2，所以无所谓。
+    DMA1_Channel2->PADDR = (uint32_t)&(GPIOD->BSHR); //存储器和外设的地址，外设是GPIOA的置位寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再当通用IO口，但ch32v003本来就只有PA1和PA2，所以无所谓。
     DMA1_Channel2->MADDR = (uint32_t)&gpio2;
 
     //TIM1-CH3是连接到DMA6通道的，产生DMA请求时通过DMA将PA1拉低。
     DMA1_Channel6->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word|DMA_DIR_PeripheralDST|DMA_Mode_Circular;
     DMA1_Channel6->CNTR = 0x0001;//数据传输数量，就一个。
-    DMA1_Channel6->PADDR = (uint32_t)&(GPIOA->BCR); //存储器和外设的地址，外设是GPIOA的清零寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再被利用。
+    DMA1_Channel6->PADDR = (uint32_t)&(GPIOD->BCR); //存储器和外设的地址，外设是GPIOA的清零寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再被利用。
     DMA1_Channel6->MADDR = (uint32_t)&gpio2;
 
 }
