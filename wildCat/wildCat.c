@@ -2,12 +2,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+
 /*参数定义*/
 #define PWM_PERIOD 0xEA3C//pwm周期，计算公式为PWM_PERIOD=183.105/所需pwm频率*0xFFFF。
 
 /*全局变量*/
 uint16_t adcval = 0;
-uint32_t adcinterrupttimes = 0;
+//uint32_t adcinterrupttimes = 0;
 
 
 void ADC1_IRQHandler(void)
@@ -80,8 +81,8 @@ static void ADC_init( void )
 	ADC1->CTLR2 |= ADC_CAL;
 	while(ADC1->CTLR2 & ADC_CAL);
 
-	//开启中断。
-	NVIC_EnableIRQ( ADC_IRQn );
+	//先不开启中断，这样就不会操作TIM2导致boost启动。
+	//NVIC_EnableIRQ( ADC_IRQn );
 
 }
 
@@ -147,7 +148,6 @@ static void PWM_init( void )
     TIM1->CH2CVR = 0x0001;//暂时设置到无占空比
     TIM1->CH1CVR = PWM_PERIOD>>1; //Channel1的比较值，达到该值时PA1拉高
     TIM1->CH3CVR = PWM_PERIOD>>1;//Channel3的比较值，达到该值时PA1拉低。由于ch3所在的DMA通道优先级较低，如果两者同时触发，DMA会先拉高再拉低，符合预期。
-	//TIM1->SWEVGR |= TIM_UG;
 
 	//开启输出。由于OSSI和OSSR为0，启动定时器之前引脚不会输出。这是我们想要的，在TIMER开启之前不会启动H桥
 	TIM1->BDTR |= TIM_MOE;
@@ -164,20 +164,62 @@ static void PWM_Setduty(uint32_t duty)
     TIM1->CH3CVR = (PWM_PERIOD>>1)+duty;
 }
 
+/**
+ * @brief 软启动升压电路。在初始化 ADC 和 HV 驱动器之后需要使用这个函数启动升压电路。
+ * 
+ * 该函数固定占空比2.5%，确保输出电压逐渐上升到足够的水平。
+ * 启动过程中会禁用 ADC 中断，所以不是PID。
+ * 
+ * @note 这一步的目标电压是固定的15V，可调节while的条件以更改。
+ * 
+ */
+static void Soft_Start()
+{
+    //软启动过程，以低占空比启动直到输出电压足够。
+    TIM2->CH1CVR = 0;
+    NVIC_DisableIRQ( ADC_IRQn );
+    TIM2->CH1CVR = 5;
+    while(ADC1->RDATAR < 30);
+    NVIC_EnableIRQ( ADC_IRQn );
+    TIM1->CTLR1 |= TIM_CEN;
+}
+
+/**
+ * 
+ * @brief 关掉H桥和升压，停止输出。
+ * 
+ * 
+ * @note PD2是DMA控制的，光是关掉计数器还不够。
+ */
+
+static void Cease_Output()
+{
+    TIM2->CH1CVR = 0;
+    TIM1->CTLR1 &= ~TIM_CEN;
+    GPIOD->BCR = 1<<2;//PD2需要手动关掉以防万一。
+    NVIC_DisableIRQ( ADC_IRQn );
+
+}
+
+
 int main( void )
 {   
     SystemInit(); //初始化系统时钟。ch32fun的sdk默认跑在HSI-PLL-48mhz,外设不分频。
-    GPIO_init();
-    ADC_init();
-    DMA_init();
-    PWM_init();
-    HVDriver_init();
+    GPIO_init(); //初始化外设
+    ADC_init(); //初始化ADC
+    DMA_init(); //初始化DMA操作器，全桥控制需要用它来控制另一对桥臂以实现相移
+    PWM_init(); //初始化全桥控制所用的计时器
+    HVDriver_init(); //初始化升压电路驱动
+    
     for(;;)
-    {   
-        PWM_Setduty(PWM_PERIOD>>2);
-        Delay_Ms(2550);
+    {  
+        Soft_Start(); 
+        PWM_Setduty(PWM_PERIOD>>3);
+        Delay_Ms(150);
         PWM_Setduty(PWM_PERIOD>>4);
-        Delay_Ms(2550);
+        Delay_Ms(150);
+        Cease_Output();
+        Delay_Ms(2000);
     }
 }
 
@@ -187,14 +229,14 @@ int main( void )
 void ADC1_IRQHandler(void)
 {
     ADC1->STATR = 0;//清空标志位
-    adcval = ADC1->RDATAR;//读取ADC值
-
+    adcval =  ( adcval >> 1 ) + ((ADC1->RDATAR) >> 1); //读取ADC值，这里是一半旧值加一半新值，滤波
 
     /*PI控制器部分。*/
 
-    int32_t error = 30-adcval;//计算误差
+    int32_t error = 70-adcval;//计算误差
     int32_t CO = 0;//控制输出。
     static int32_t intergal;//积分项
+    static int32_t preverror;//上一次的误差
 
     intergal += (error>>2); //积分系数为0.25
 
@@ -202,12 +244,14 @@ void ADC1_IRQHandler(void)
     intergal = intergal > 160 ? 160 : intergal;
     intergal = intergal < -20 ? -20 :intergal;
 
-    CO = (error<<2) + intergal;//比例系数为4
+    CO = (error<<2) + intergal + ( (error-preverror)<<1 );//比例系数为4,微分系数为2
 
     //限制CO上下限。
     CO = CO >= 128 ? 128 : CO;
     CO = CO <= 0 ? 0 : CO; 
 
     TIM2->CH1CVR = CO;
+    preverror = error;
+
 
 }
