@@ -294,4 +294,6 @@ cv_flash : $(TARGET).bin
 cv_clean :
 	rm -rf $(TARGET).elf $(TARGET).bin $(TARGET).hex $(TARGET).lst $(TARGET).map $(TARGET).hex $(GENERATED_LD_FILE) || true
 
+cv_build : $(TARGET).bin
+
 build : $(TARGET).bin
