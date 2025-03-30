@@ -5,3 +5,8 @@ wildCat/wildCat.elf
 wildCat/wildCat.hex
 wildCat/wildCat.lst
 wildCat/wildCat.map
+*.map
+*.lst
+*.hex
+*.elf
+*.bin
