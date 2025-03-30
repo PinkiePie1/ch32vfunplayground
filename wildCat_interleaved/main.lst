@@ -1,0 +1,609 @@
+
+main.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .init:
+
+00000000 <InterruptVector>:
+   0:	0f40006f          	j	f4 <handle_reset>
+   4:	00000000          	.word	0x00000000
+   8:	000001b0          	.word	0x000001b0
+   c:	00000164          	.word	0x00000164
+	...
+  30:	00000164          	.word	0x00000164
+  34:	00000000          	.word	0x00000000
+  38:	00000164          	.word	0x00000164
+  3c:	00000000          	.word	0x00000000
+  40:	00000164          	.word	0x00000164
+  44:	00000164          	.word	0x00000164
+  48:	00000164          	.word	0x00000164
+  4c:	00000164          	.word	0x00000164
+  50:	00000164          	.word	0x00000164
+  54:	00000164          	.word	0x00000164
+  58:	00000164          	.word	0x00000164
+  5c:	00000164          	.word	0x00000164
+  60:	00000164          	.word	0x00000164
+  64:	00000164          	.word	0x00000164
+  68:	00000164          	.word	0x00000164
+  6c:	00000164          	.word	0x00000164
+  70:	00000164          	.word	0x00000164
+  74:	20000008          	.word	0x20000008
+  78:	00000164          	.word	0x00000164
+  7c:	00000164          	.word	0x00000164
+  80:	00000164          	.word	0x00000164
+  84:	00000164          	.word	0x00000164
+  88:	00000164          	.word	0x00000164
+  8c:	00000164          	.word	0x00000164
+  90:	00000164          	.word	0x00000164
+  94:	00000164          	.word	0x00000164
+  98:	00000164          	.word	0x00000164
+  9c:	0000                	.insn	2, 0x
+	...
+
+Disassembly of section .text:
+
+000000a0 <PrintHex>:
+  a0:	e00007b7          	lui	a5,0xe0000
+  a4:	0f478793          	addi	a5,a5,244 # e00000f4 <_eusrstack+0xbffff8f4>
+  a8:	4398                	lw	a4,0(a5)
+  aa:	08077713          	andi	a4,a4,128
+  ae:	ff6d                	bnez	a4,a8 <PrintHex+0x8>
+  b0:	78302737          	lui	a4,0x78302
+  b4:	08870713          	addi	a4,a4,136 # 78302088 <_eusrstack+0x58301888>
+  b8:	e00006b7          	lui	a3,0xe0000
+  bc:	c398                	sw	a4,0(a5)
+  be:	0f468693          	addi	a3,a3,244 # e00000f4 <_eusrstack+0xbffff8f4>
+  c2:	4771                	li	a4,28
+  c4:	4325                	li	t1,9
+  c6:	55f1                	li	a1,-4
+  c8:	429c                	lw	a5,0(a3)
+  ca:	0807f793          	andi	a5,a5,128
+  ce:	ffed                	bnez	a5,c8 <PrintHex+0x28>
+  d0:	00e55633          	srl	a2,a0,a4
+  d4:	8a3d                	andi	a2,a2,15
+  d6:	05700793          	li	a5,87
+  da:	00c36463          	bltu	t1,a2,e2 <PrintHex+0x42>
+  de:	03000793          	li	a5,48
+  e2:	97b2                	add	a5,a5,a2
+  e4:	07a2                	slli	a5,a5,0x8
+  e6:	0857e793          	ori	a5,a5,133
+  ea:	c29c                	sw	a5,0(a3)
+  ec:	1771                	addi	a4,a4,-4
+  ee:	fcb71de3          	bne	a4,a1,c8 <PrintHex+0x28>
+  f2:	8082                	ret
+
+000000f4 <handle_reset>:
+  f4:	20000197          	auipc	gp,0x20000
+  f8:	30818193          	addi	gp,gp,776 # 200003fc <__global_pointer$>
+  fc:	40418113          	addi	sp,gp,1028 # 20000800 <_eusrstack>
+ 100:	6509                	lui	a0,0x2
+ 102:	88050513          	addi	a0,a0,-1920 # 1880 <ch32fun.c.ebf866bc+0x756>
+ 106:	30051073          	csrw	mstatus,a0
+ 10a:	468d                	li	a3,3
+ 10c:	00000517          	auipc	a0,0x0
+ 110:	ef450513          	addi	a0,a0,-268 # 0 <InterruptVector>
+ 114:	8d55                	or	a0,a0,a3
+ 116:	30551073          	csrw	mtvec,a0
+ 11a:	ca018513          	addi	a0,gp,-864 # 2000009c <preverror.1>
+ 11e:	cac18593          	addi	a1,gp,-852 # 200000a8 <_ebss>
+ 122:	4601                	li	a2,0
+ 124:	00b55663          	bge	a0,a1,130 <handle_reset+0x3c>
+ 128:	c110                	sw	a2,0(a0)
+ 12a:	0511                	addi	a0,a0,4
+ 12c:	feb54ee3          	blt	a0,a1,128 <handle_reset+0x34>
+ 130:	47000513          	li	a0,1136
+ 134:	c0418593          	addi	a1,gp,-1020 # 20000000 <gpio2.0>
+ 138:	20000617          	auipc	a2,0x20000
+ 13c:	f6460613          	addi	a2,a2,-156 # 2000009c <preverror.1>
+ 140:	00c58863          	beq	a1,a2,150 <handle_reset+0x5c>
+ 144:	4114                	lw	a3,0(a0)
+ 146:	c194                	sw	a3,0(a1)
+ 148:	0511                	addi	a0,a0,4
+ 14a:	0591                	addi	a1,a1,4
+ 14c:	fec59ae3          	bne	a1,a2,140 <handle_reset+0x4c>
+ 150:	e000f7b7          	lui	a5,0xe000f
+ 154:	4705                	li	a4,1
+ 156:	c398                	sw	a4,0(a5)
+ 158:	22000793          	li	a5,544
+ 15c:	34179073          	csrw	mepc,a5
+ 160:	30200073          	mret
+
+00000164 <ADC1_2_IRQHandler>:
+
+// Return the Machine Exception Program Register (MEPC)
+static inline uint32_t __get_MEPC(void)
+{
+	uint32_t result;
+	__ASM volatile( ADD_ARCH_ZICSR "csrr %0," "mepc" : "=r"(result));
+ 164:	34102573          	csrr	a0,mepc
+void DefaultIRQHandler( void )
+{
+#if FUNCONF_DEBUG_HARDFAULT && ( FUNCONF_USE_DEBUGPRINTF || FUNCONF_USE_UARTPRINTF )
+	//This is kind of like a crash handler.
+	//printf( "DEAD MSTATUS:%08x MTVAL:%08x MCAUSE:%08x MEPC:%08x\n", (int)__get_MSTATUS(), (int)__get_MTVAL(), (int)__get_MCAUSE(), (int)__get_MEPC() );
+	PrintHex( __get_MEPC() ); // "addr2line -e debugprintfdemo.elf 0x000007e6" ---> debugprintfdemo.c:45
+ 168:	3f25                	jal	a0 <PrintHex>
+	__ASM volatile( ADD_ARCH_ZICSR "csrr %0, mstatus": "=r"(result) );
+ 16a:	30002573          	csrr	a0,mstatus
+	PrintHex( __get_MSTATUS() );
+ 16e:	3f0d                	jal	a0 <PrintHex>
+
+// Return the Machine Trap Value Register (MTVAL)
+static inline uint32_t __get_MTVAL(void)
+{
+	uint32_t result;
+	__ASM volatile( ADD_ARCH_ZICSR "csrr %0," "mtval" : "=r" (result) );
+ 170:	34302573          	csrr	a0,mtval
+	PrintHex( __get_MTVAL() );
+ 174:	3735                	jal	a0 <PrintHex>
+	__ASM volatile( ADD_ARCH_ZICSR "csrr %0," "mcause": "=r"(result));
+ 176:	34202573          	csrr	a0,mcause
+	PrintHex( __get_MCAUSE() );
+ 17a:	371d                	jal	a0 <PrintHex>
+#if FUNCONF_USE_DEBUGPRINTF
+	while( (*DMDATA0) & 0x80 );
+ 17c:	e00007b7          	lui	a5,0xe0000
+ 180:	0f478793          	addi	a5,a5,244 # e00000f4 <_eusrstack+0xbffff8f4>
+ 184:	4398                	lw	a4,0(a5)
+ 186:	08077713          	andi	a4,a4,128
+ 18a:	ff6d                	bnez	a4,184 <ADC1_2_IRQHandler+0x20>
+	*DMDATA0 = 0x0a85;
+ 18c:	6705                	lui	a4,0x1
+ 18e:	a8570713          	addi	a4,a4,-1403 # a85 <_data_lma+0x615>
+ 192:	c398                	sw	a4,0(a5)
+	while( (*DMDATA0) & 0x80 );
+ 194:	e00007b7          	lui	a5,0xe0000
+ 198:	0f478793          	addi	a5,a5,244 # e00000f4 <_eusrstack+0xbffff8f4>
+ 19c:	4398                	lw	a4,0(a5)
+ 19e:	08077713          	andi	a4,a4,128
+ 1a2:	ff6d                	bnez	a4,19c <ADC1_2_IRQHandler+0x38>
+	*DMDATA0 = 0xaaaaaa83;
+ 1a4:	aaaab737          	lui	a4,0xaaaab
+ 1a8:	a8370713          	addi	a4,a4,-1405 # aaaaaa83 <_eusrstack+0x8aaaa283>
+ 1ac:	c398                	sw	a4,0(a5)
+	putchar( '\n' );
+#endif
+#endif
+	//printf( "DEAD MSTATUS:%08x MTVAL:%08x MCAUSE:%08x MEPC:%08x\n", (int)__get_MSTATUS(), (int)__get_MTVAL(), (int)__get_MCAUSE(), (int)__get_MEPC() );
+	// Infinite Loop
+	asm volatile( "1: j 1b" );
+ 1ae:	a001                	j	1ae <ADC1_2_IRQHandler+0x4a>
+
+000001b0 <NMI_Handler>:
+ * 			The sys clock is switched to HSI.
+ * 			Clears the CSSF flag in RCC->INTR
+ */
+void NMI_RCC_CSS_IRQHandler( void )
+{
+	RCC->INTR |= RCC_CSSC;	// clear the clock security int flag
+ 1b0:	40021737          	lui	a4,0x40021
+ 1b4:	471c                	lw	a5,8(a4)
+ 1b6:	008006b7          	lui	a3,0x800
+ 1ba:	8fd5                	or	a5,a5,a3
+ 1bc:	c71c                	sw	a5,8(a4)
+
+000001be <SystemInit>:
+ 1be:	400227b7          	lui	a5,0x40022
+ 1c2:	4705                	li	a4,1
+ 1c4:	c398                	sw	a4,0(a5)
+ 1c6:	400217b7          	lui	a5,0x40021
+ 1ca:	01080737          	lui	a4,0x1080
+ 1ce:	0007a223          	sw	zero,4(a5) # 40021004 <_eusrstack+0x20020804>
+ 1d2:	08170713          	addi	a4,a4,129 # 1080081 <main.c.4742a15c+0x107decc>
+ 1d6:	c398                	sw	a4,0(a5)
+ 1d8:	009f0737          	lui	a4,0x9f0
+ 1dc:	c798                	sw	a4,8(a5)
+ 1de:	40021737          	lui	a4,0x40021
+ 1e2:	431c                	lw	a5,0(a4)
+ 1e4:	00679693          	slli	a3,a5,0x6
+ 1e8:	fe06dde3          	bgez	a3,1e2 <SystemInit+0x24>
+ 1ec:	435c                	lw	a5,4(a4)
+ 1ee:	400216b7          	lui	a3,0x40021
+ 1f2:	9bf1                	andi	a5,a5,-4
+ 1f4:	0027e793          	ori	a5,a5,2
+ 1f8:	c35c                	sw	a5,4(a4)
+ 1fa:	4721                	li	a4,8
+ 1fc:	42dc                	lw	a5,4(a3)
+ 1fe:	8bb1                	andi	a5,a5,12
+ 200:	fee79ee3          	bne	a5,a4,1fc <SystemInit+0x3e>
+ 204:	e00007b7          	lui	a5,0xe0000
+ 208:	0f878793          	addi	a5,a5,248 # e00000f8 <_eusrstack+0xbffff8f8>
+ 20c:	0007a023          	sw	zero,0(a5)
+ 210:	e00007b7          	lui	a5,0xe0000
+ 214:	0f478793          	addi	a5,a5,244 # e00000f4 <_eusrstack+0xbffff8f4>
+ 218:	08000713          	li	a4,128
+ 21c:	c398                	sw	a4,0(a5)
+ 21e:	8082                	ret
+
+00000220 <main>:
+
+}
+
+
+int main( void )
+{
+ 220:	1151                	addi	sp,sp,-12
+ 222:	c406                	sw	ra,8(sp)
+ 224:	c222                	sw	s0,4(sp)
+    SystemInit(); //初始化系统时钟。ch32fun的sdk默认跑在HSI-PLL-48mhz,外设不分频。
+ 226:	3f61                	jal	1be <SystemInit>
+    RCC->APB2PCENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD |  RCC_APB2Periph_GPIOC; //开启GPIOA，C和D时钟
+ 228:	400217b7          	lui	a5,0x40021
+ 22c:	4f98                	lw	a4,24(a5)
+    GPIOA->CFGLR &= ~(0xf<<(4*2));
+ 22e:	767d                	lui	a2,0xfffff
+ 230:	0ff60613          	addi	a2,a2,255 # fffff0ff <_eusrstack+0xdfffe8ff>
+    RCC->APB2PCENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD |  RCC_APB2Periph_GPIOC; //开启GPIOA，C和D时钟
+ 234:	03476713          	ori	a4,a4,52
+ 238:	cf98                	sw	a4,24(a5)
+    GPIOA->CFGLR &= ~(0xf<<(4*2));
+ 23a:	40011737          	lui	a4,0x40011
+ 23e:	80070713          	addi	a4,a4,-2048 # 40010800 <_eusrstack+0x20010000>
+ 242:	4314                	lw	a3,0(a4)
+    GPIOD->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP_AF)<<(4*4); 
+ 244:	000b0537          	lui	a0,0xb0
+    GPIOA->CFGLR &= ~(0xf<<(4*2));
+ 248:	400115b7          	lui	a1,0x40011
+ 24c:	8ef1                	and	a3,a3,a2
+ 24e:	c314                	sw	a3,0(a4)
+    GPIOA->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP)<<(4*2);
+ 250:	4314                	lw	a3,0(a4)
+ 252:	3006e693          	ori	a3,a3,768
+ 256:	c314                	sw	a3,0(a4)
+    GPIOA->CFGLR &= ~(0xf<<(4*1));
+ 258:	4314                	lw	a3,0(a4)
+ 25a:	f0f6f693          	andi	a3,a3,-241
+ 25e:	c314                	sw	a3,0(a4)
+    GPIOA->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP_AF)<<(4*1); 
+ 260:	4314                	lw	a3,0(a4)
+ 262:	0b06e693          	ori	a3,a3,176
+ 266:	c314                	sw	a3,0(a4)
+    GPIOD->CFGLR &= ~(0xf<<(4*4));
+ 268:	40011737          	lui	a4,0x40011
+ 26c:	40070713          	addi	a4,a4,1024 # 40011400 <_eusrstack+0x20010c00>
+ 270:	4310                	lw	a2,0(a4)
+ 272:	fff106b7          	lui	a3,0xfff10
+ 276:	16fd                	addi	a3,a3,-1 # fff0ffff <_eusrstack+0xdff0f7ff>
+ 278:	8e75                	and	a2,a2,a3
+ 27a:	c310                	sw	a2,0(a4)
+    GPIOD->CFGLR |= (GPIO_Speed_30MHz | GPIO_CNF_OUT_PP_AF)<<(4*4); 
+ 27c:	4310                	lw	a2,0(a4)
+ 27e:	8e49                	or	a2,a2,a0
+ 280:	c310                	sw	a2,0(a4)
+    GPIOC->CFGLR &= ~(0xf<<(4*4));
+ 282:	4198                	lw	a4,0(a1)
+ 284:	8f75                	and	a4,a4,a3
+ 286:	c198                	sw	a4,0(a1)
+    RCC->APB2PCENR |= RCC_APB2Periph_ADC1;//开启ADC时钟并初始化所有寄存器
+ 288:	4f98                	lw	a4,24(a5)
+    RCC->CFGR0 &= ~RCC_ADCPRE;
+ 28a:	76c1                	lui	a3,0xffff0
+ 28c:	7ff68693          	addi	a3,a3,2047 # ffff07ff <_eusrstack+0xdffeffff>
+    RCC->APB2PCENR |= RCC_APB2Periph_ADC1;//开启ADC时钟并初始化所有寄存器
+ 290:	20076713          	ori	a4,a4,512
+ 294:	cf98                	sw	a4,24(a5)
+    RCC->APB2PRSTR |= RCC_APB2Periph_ADC1;
+ 296:	47d8                	lw	a4,12(a5)
+ 298:	20076713          	ori	a4,a4,512
+ 29c:	c7d8                	sw	a4,12(a5)
+    RCC->APB2PRSTR &= ~RCC_APB2Periph_ADC1;
+ 29e:	47d8                	lw	a4,12(a5)
+ 2a0:	dff77713          	andi	a4,a4,-513
+ 2a4:	c7d8                	sw	a4,12(a5)
+    RCC->CFGR0 &= ~RCC_ADCPRE;
+ 2a6:	43d8                	lw	a4,4(a5)
+ 2a8:	8f75                	and	a4,a4,a3
+ 2aa:	c3d8                	sw	a4,4(a5)
+    RCC->CFGR0 |= RCC_ADCPRE_DIV4;	// 4分频，12Mhz。如果5V供电能开到24Mhz，但这里就先不这么做。
+ 2ac:	43d8                	lw	a4,4(a5)
+ 2ae:	6691                	lui	a3,0x4
+ 2b0:	8f55                	or	a4,a4,a3
+ 2b2:	c3d8                	sw	a4,4(a5)
+    ADC1->RSQR1 = 0;
+ 2b4:	400127b7          	lui	a5,0x40012
+ 2b8:	40078793          	addi	a5,a5,1024 # 40012400 <_eusrstack+0x20011c00>
+ 2bc:	0207a623          	sw	zero,44(a5)
+    ADC1->RSQR3 = 2;//只开一个通道，转换pc4，也就是A2。
+ 2c0:	4709                	li	a4,2
+ 2c2:	dbd8                	sw	a4,52(a5)
+    ADC1->SAMPTR2=1<<(3*2);//设置采样时间，注意这里是设置采样源（0-9）的时间，并非规则组内通道的时间。
+ 2c4:	04000713          	li	a4,64
+ 2c8:	cb98                	sw	a4,16(a5)
+    ADC1->CTLR1 |= ADC_EOCIE | ADC_SCAN;//开启转换结束中断。
+ 2ca:	43d8                	lw	a4,4(a5)
+    ADC1->CTLR2 |= ADC_EXTTRIG |ADC_EXTSEL_0|ADC_EXTSEL_1;//开启TRGO触发转换功能。
+ 2cc:	001606b7          	lui	a3,0x160
+    ADC1->CTLR1 |= ADC_EOCIE | ADC_SCAN;//开启转换结束中断。
+ 2d0:	12076713          	ori	a4,a4,288
+ 2d4:	c3d8                	sw	a4,4(a5)
+    ADC1->CTLR2 |= ADC_EXTTRIG |ADC_EXTSEL_0|ADC_EXTSEL_1;//开启TRGO触发转换功能。
+ 2d6:	4798                	lw	a4,8(a5)
+ 2d8:	8f55                	or	a4,a4,a3
+ 2da:	c798                	sw	a4,8(a5)
+    ADC1->CTLR2 |= ADC_ADON;
+ 2dc:	4798                	lw	a4,8(a5)
+ 2de:	00176713          	ori	a4,a4,1
+ 2e2:	c798                	sw	a4,8(a5)
+    ADC1->CTLR2 |= ADC_RSTCAL;
+ 2e4:	4798                	lw	a4,8(a5)
+ 2e6:	00876713          	ori	a4,a4,8
+ 2ea:	c798                	sw	a4,8(a5)
+    while(ADC1->CTLR2 & ADC_RSTCAL);
+ 2ec:	4798                	lw	a4,8(a5)
+ 2ee:	8b21                	andi	a4,a4,8
+ 2f0:	ff75                	bnez	a4,2ec <main+0xcc>
+    ADC1->CTLR2 |= ADC_CAL;
+ 2f2:	4798                	lw	a4,8(a5)
+ 2f4:	00476713          	ori	a4,a4,4
+ 2f8:	c798                	sw	a4,8(a5)
+    while(ADC1->CTLR2 & ADC_CAL);
+ 2fa:	40012737          	lui	a4,0x40012
+ 2fe:	40070713          	addi	a4,a4,1024 # 40012400 <_eusrstack+0x20011c00>
+ 302:	471c                	lw	a5,8(a4)
+ 304:	8b91                	andi	a5,a5,4
+ 306:	fff5                	bnez	a5,302 <main+0xe2>
+    RCC->AHBPCENR |= RCC_AHBPeriph_DMA1;//开启DMA时钟
+ 308:	400217b7          	lui	a5,0x40021
+ 30c:	4bd8                	lw	a4,20(a5)
+    DMA1_Channel2->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word | DMA_DIR_PeripheralDST | DMA_Mode_Circular;
+ 30e:	6611                	lui	a2,0x4
+ 310:	a3160613          	addi	a2,a2,-1487 # 3a31 <main.c.4742a15c+0x187c>
+    RCC->AHBPCENR |= RCC_AHBPeriph_DMA1;//开启DMA时钟
+ 314:	00176713          	ori	a4,a4,1
+ 318:	cbd8                	sw	a4,20(a5)
+    DMA1_Channel2->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word | DMA_DIR_PeripheralDST | DMA_Mode_Circular;
+ 31a:	40020737          	lui	a4,0x40020
+ 31e:	4f54                	lw	a3,28(a4)
+    DMA1_Channel2->CNTR = 0x0001;//数据传输数量，就一个。
+ 320:	4505                	li	a0,1
+	NVIC->IRER[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+ 322:	200003b7          	lui	t2,0x20000
+    DMA1_Channel2->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word | DMA_DIR_PeripheralDST | DMA_Mode_Circular;
+ 326:	8ed1                	or	a3,a3,a2
+ 328:	cf54                	sw	a3,28(a4)
+    DMA1_Channel2->PADDR = (uint32_t)&(GPIOD->BSHR); //存储器和外设的地址，外设是GPIOA的置位寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再当通用IO口，但ch32v003本来就只有PA1和PA2，所以无所谓。
+ 32a:	400116b7          	lui	a3,0x40011
+    DMA1_Channel2->CNTR = 0x0001;//数据传输数量，就一个。
+ 32e:	d308                	sw	a0,32(a4)
+    DMA1_Channel2->PADDR = (uint32_t)&(GPIOD->BSHR); //存储器和外设的地址，外设是GPIOA的置位寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再当通用IO口，但ch32v003本来就只有PA1和PA2，所以无所谓。
+ 330:	41068693          	addi	a3,a3,1040 # 40011410 <_eusrstack+0x20010c10>
+ 334:	d354                	sw	a3,36(a4)
+    DMA1_Channel2->MADDR = (uint32_t)&gpio2;
+ 336:	c0418693          	addi	a3,gp,-1020 # 20000000 <gpio2.0>
+ 33a:	d714                	sw	a3,40(a4)
+    DMA1_Channel6->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word|DMA_DIR_PeripheralDST|DMA_Mode_Circular;
+ 33c:	40020737          	lui	a4,0x40020
+ 340:	576c                	lw	a1,108(a4)
+ 342:	200000b7          	lui	ra,0x20000
+    TIM2->CH1CVR = 5;
+ 346:	4415                	li	s0,5
+    DMA1_Channel6->CFGR |= DMA_CFGR2_EN | DMA_Priority_VeryHigh | DMA_MemoryDataSize_Word | DMA_PeripheralDataSize_Word|DMA_DIR_PeripheralDST|DMA_Mode_Circular;
+ 348:	8e4d                	or	a2,a2,a1
+ 34a:	d770                	sw	a2,108(a4)
+    DMA1_Channel6->PADDR = (uint32_t)&(GPIOD->BCR); //存储器和外设的地址，外设是GPIOA的清零寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再被利用。
+ 34c:	40011637          	lui	a2,0x40011
+    DMA1_Channel6->CNTR = 0x0001;//数据传输数量，就一个。
+ 350:	db28                	sw	a0,112(a4)
+    DMA1_Channel6->PADDR = (uint32_t)&(GPIOD->BCR); //存储器和外设的地址，外设是GPIOA的清零寄存器。由于进行了搬运，会使得GPIOA其他所有GPIO都不能再被利用。
+ 352:	41460613          	addi	a2,a2,1044 # 40011414 <_eusrstack+0x20010c14>
+ 356:	db70                	sw	a2,116(a4)
+    DMA1_Channel6->MADDR = (uint32_t)&gpio2;
+ 358:	df34                	sw	a3,120(a4)
+    RCC->APB2PCENR |= RCC_APB2Periph_TIM1; //开启TIM1时钟
+ 35a:	4f94                	lw	a3,24(a5)
+ 35c:	6705                	lui	a4,0x1
+ 35e:	80070713          	addi	a4,a4,-2048 # 800 <_data_lma+0x390>
+ 362:	8ed9                	or	a3,a3,a4
+ 364:	cf94                	sw	a3,24(a5)
+    RCC->APB2PRSTR |= RCC_APB2Periph_TIM1; //重置timer1
+ 366:	47d4                	lw	a3,12(a5)
+    while(ADC1->RDATAR < 30);
+ 368:	40012537          	lui	a0,0x40012
+    TIM2->CH1CVR = 0;
+ 36c:	40000637          	lui	a2,0x40000
+    RCC->APB2PRSTR |= RCC_APB2Periph_TIM1; //重置timer1
+ 370:	8f55                	or	a4,a4,a3
+ 372:	c7d8                	sw	a4,12(a5)
+    RCC->APB2PRSTR &= ~RCC_APB2Periph_TIM1;
+ 374:	47d8                	lw	a4,12(a5)
+ 376:	76fd                	lui	a3,0xfffff
+ 378:	7ff68693          	addi	a3,a3,2047 # fffff7ff <_eusrstack+0xdfffefff>
+ 37c:	8f75                	and	a4,a4,a3
+ 37e:	c7d8                	sw	a4,12(a5)
+    RCC->APB1PCENR |= RCC_APB1Periph_TIM2; //开启tim2时钟
+ 380:	4fd8                	lw	a4,28(a5)
+    TIM2->BDTR |= TIM_MOE;
+ 382:	66a1                	lui	a3,0x8
+ 384:	e000e5b7          	lui	a1,0xe000e
+    RCC->APB1PCENR |= RCC_APB1Periph_TIM2; //开启tim2时钟
+ 388:	00176713          	ori	a4,a4,1
+ 38c:	cfd8                	sw	a4,28(a5)
+    RCC->APB1PRSTR |= RCC_APB1Periph_TIM2; //重置timer2
+ 38e:	4b98                	lw	a4,16(a5)
+    while(ADC1->RDATAR < 30);
+ 390:	40050513          	addi	a0,a0,1024 # 40012400 <_eusrstack+0x20011c00>
+    RCC->APB1PRSTR |= RCC_APB1Periph_TIM2; //重置timer2
+ 394:	00176713          	ori	a4,a4,1
+ 398:	cb98                	sw	a4,16(a5)
+	RCC->APB1PRSTR &= ~RCC_APB1Periph_TIM2;
+ 39a:	4b98                	lw	a4,16(a5)
+ 39c:	9b79                	andi	a4,a4,-2
+ 39e:	cb98                	sw	a4,16(a5)
+    TIM2->CCER |= TIM_CC1E;//使能channel1输出
+ 3a0:	400007b7          	lui	a5,0x40000
+ 3a4:	0207d703          	lhu	a4,32(a5) # 40000020 <_eusrstack+0x1ffff820>
+ 3a8:	00176713          	ori	a4,a4,1
+ 3ac:	02e79023          	sh	a4,32(a5)
+    TIM2->CHCTLR1 |= ( TIM_OC1M_2 | TIM_OC1M_1 );//PWM模式1，对比较值的更改立刻生效。
+ 3b0:	0187d703          	lhu	a4,24(a5)
+ 3b4:	06076713          	ori	a4,a4,96
+ 3b8:	00e79c23          	sh	a4,24(a5)
+    TIM2->CTLR2 |= TIM_MMS_1;//更新事件被输出到TRGO，用于触发ADC。这意味着每次计时器溢出就会触发ADC。数据手册中的描述可能有误，不是输入，是输出。
+ 3bc:	0047d703          	lhu	a4,4(a5)
+ 3c0:	02076713          	ori	a4,a4,32
+ 3c4:	00e79223          	sh	a4,4(a5)
+    TIM2->PSC = 0x0000;//不分频，48Mhz为tim2时钟
+ 3c8:	02079423          	sh	zero,40(a5)
+    TIM2->ATRLR = (uint32_t)160;//周期为160次计数，因此为300khz输出。
+ 3cc:	0a000713          	li	a4,160
+ 3d0:	02e79623          	sh	a4,44(a5)
+    TIM2->CH1CVR = (uint32_t)0;//开始占空比为0
+ 3d4:	0207aa23          	sw	zero,52(a5)
+    TIM2->BDTR |= TIM_MOE;
+ 3d8:	0447d703          	lhu	a4,68(a5)
+ 3dc:	8f55                	or	a4,a4,a3
+ 3de:	04e79223          	sh	a4,68(a5)
+    TIM2->CTLR1 |= TIM_CEN;//启动定时器。
+ 3e2:	0007d703          	lhu	a4,0(a5)
+#endif
+
+void DelaySysTick( uint32_t n )
+{
+#if defined(CH32V003) || defined(CH32V00x)
+	uint32_t targend = SysTick->CNT + n;
+ 3e6:	00b726b7          	lui	a3,0xb72
+ 3ea:	b0068693          	addi	a3,a3,-1280 # b71b00 <main.c.4742a15c+0xb6f94b>
+ 3ee:	00176713          	ori	a4,a4,1
+ 3f2:	00e79023          	sh	a4,0(a5)
+    TIM1->CTLR1 |= TIM_CEN;
+ 3f6:	400137b7          	lui	a5,0x40013
+ 3fa:	c0078793          	addi	a5,a5,-1024 # 40012c00 <_eusrstack+0x20012400>
+ 3fe:	e000f737          	lui	a4,0xe000f
+    TIM2->CH1CVR = 0;
+ 402:	02062a23          	sw	zero,52(a2) # 40000034 <_eusrstack+0x1ffff834>
+ 406:	1815a023          	sw	ra,384(a1) # e000e180 <_eusrstack+0xc000d980>
+    TIM2->CH1CVR = 5;
+ 40a:	da40                	sw	s0,52(a2)
+    while(ADC1->RDATAR < 30);
+ 40c:	4375                	li	t1,29
+ 40e:	04c52283          	lw	t0,76(a0)
+ 412:	fe537ee3          	bgeu	t1,t0,40e <main+0x1ee>
+	NVIC->IENR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+ 416:	1075a023          	sw	t2,256(a1)
+    TIM1->CTLR1 |= TIM_CEN;
+ 41a:	0007d303          	lhu	t1,0(a5)
+ 41e:	00136313          	ori	t1,t1,1
+ 422:	00679023          	sh	t1,0(a5)
+ 426:	00872283          	lw	t0,8(a4) # e000f008 <_eusrstack+0xc000e808>
+ 42a:	92b6                	add	t0,t0,a3
+	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
+ 42c:	00872303          	lw	t1,8(a4)
+ 430:	40530333          	sub	t1,t1,t0
+ 434:	fe034ce3          	bltz	t1,42c <main+0x20c>
+    TIM2->CH1CVR = 0;
+ 438:	02062a23          	sw	zero,52(a2)
+    TIM1->CTLR1 &= ~TIM_CEN;
+ 43c:	0007d303          	lhu	t1,0(a5)
+ 440:	62c1                	lui	t0,0x10
+ 442:	12f9                	addi	t0,t0,-2 # fffe <main.c.4742a15c+0xde49>
+ 444:	00537333          	and	t1,t1,t0
+ 448:	00679023          	sh	t1,0(a5)
+    GPIOD->BCR = 1<<2;//PD2需要手动关掉以防万一。
+ 44c:	4291                	li	t0,4
+ 44e:	40011337          	lui	t1,0x40011
+ 452:	40532a23          	sw	t0,1044(t1) # 40011414 <_eusrstack+0x20010c14>
+	NVIC->IRER[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+ 456:	1875a023          	sw	t2,384(a1)
+	uint32_t targend = SysTick->CNT + n;
+ 45a:	00872283          	lw	t0,8(a4)
+ 45e:	92b6                	add	t0,t0,a3
+	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
+ 460:	00872303          	lw	t1,8(a4)
+ 464:	40530333          	sub	t1,t1,t0
+ 468:	fe034ce3          	bltz	t1,460 <main+0x240>
+ 46c:	bf59                	j	402 <main+0x1e2>
+	...
+
+Disassembly of section .data:
+
+20000000 <gpio2.0>:
+20000000:	0004 0000 0000 0000                         ........
+
+20000008 <ADC1_IRQHandler>:
+
+//ADC的中断处理函数
+
+
+void ADC1_IRQHandler(void)
+{
+20000008:	1131                	addi	sp,sp,-20
+2000000a:	c03e                	sw	a5,0(sp)
+    ADC1->STATR = 0;//清空标志位
+2000000c:	400127b7          	lui	a5,0x40012
+20000010:	40078793          	addi	a5,a5,1024 # 40012400 <_eusrstack+0x20011c00>
+{
+20000014:	c632                	sw	a2,12(sp)
+20000016:	c436                	sw	a3,8(sp)
+20000018:	c23a                	sw	a4,4(sp)
+2000001a:	c82e                	sw	a1,16(sp)
+    ADC1->STATR = 0;//清空标志位
+2000001c:	0007a023          	sw	zero,0(a5)
+    adcval =  ( adcval >> 1 ) + ((ADC1->RDATAR) >> 1); //读取ADC值，这里是一半旧值加一半新值，滤波
+20000020:	47f8                	lw	a4,76(a5)
+20000022:	ca81d783          	lhu	a5,-856(gp) # 200000a4 <adcval>
+20000026:	8305                	srli	a4,a4,0x1
+20000028:	8385                	srli	a5,a5,0x1
+2000002a:	97ba                	add	a5,a5,a4
+2000002c:	07c2                	slli	a5,a5,0x10
+2000002e:	83c1                	srli	a5,a5,0x10
+20000030:	caf19423          	sh	a5,-856(gp) # 200000a4 <adcval>
+
+    /*PI控制器部分。*/
+
+    int32_t error = 70-adcval;//计算误差
+20000034:	04600693          	li	a3,70
+20000038:	8e9d                	sub	a3,a3,a5
+    int32_t CO = 0;//控制输出。
+    static int32_t intergal;//积分项
+    static int32_t preverror;//上一次的误差
+
+    intergal += (error>>2); //积分系数为0.25
+2000003a:	ca41a603          	lw	a2,-860(gp) # 200000a0 <intergal.2>
+2000003e:	4026d713          	srai	a4,a3,0x2
+20000042:	9732                	add	a4,a4,a2
+
+    //控制积分上下限
+    intergal = intergal > 160 ? 160 : intergal;
+20000044:	0a000613          	li	a2,160
+20000048:	00e65463          	bge	a2,a4,20000050 <ADC1_IRQHandler+0x48>
+2000004c:	0a000713          	li	a4,160
+    intergal = intergal < -20 ? -20 :intergal;
+20000050:	5631                	li	a2,-20
+20000052:	00c75363          	bge	a4,a2,20000058 <ADC1_IRQHandler+0x50>
+20000056:	5731                	li	a4,-20
+20000058:	cae1a223          	sw	a4,-860(gp) # 200000a0 <intergal.2>
+
+    CO = (error<<2) + intergal + ( (error-preverror)<<1 );//比例系数为4,微分系数为2
+2000005c:	ca01a783          	lw	a5,-864(gp) # 2000009c <_edata>
+20000060:	00269613          	slli	a2,a3,0x2
+20000064:	9732                	add	a4,a4,a2
+20000066:	40f687b3          	sub	a5,a3,a5
+2000006a:	0786                	slli	a5,a5,0x1
+2000006c:	97ba                	add	a5,a5,a4
+
+    //限制CO上下限。
+    CO = CO >= 128 ? 128 : CO;
+2000006e:	08000713          	li	a4,128
+20000072:	02f75163          	bge	a4,a5,20000094 <ADC1_IRQHandler+0x8c>
+20000076:	08000793          	li	a5,128
+    CO = CO <= 0 ? 0 : CO; 
+
+    TIM2->CH1CVR = CO;
+2000007a:	40000737          	lui	a4,0x40000
+2000007e:	db5c                	sw	a5,52(a4)
+    preverror = error;
+20000080:	cad1a023          	sw	a3,-864(gp) # 2000009c <_edata>
+
+
+}
+20000084:	4632                	lw	a2,12(sp)
+20000086:	45c2                	lw	a1,16(sp)
+20000088:	46a2                	lw	a3,8(sp)
+2000008a:	4712                	lw	a4,4(sp)
+2000008c:	4782                	lw	a5,0(sp)
+2000008e:	0151                	addi	sp,sp,20
+20000090:	30200073          	mret
+    CO = CO <= 0 ? 0 : CO; 
+20000094:	fe07d3e3          	bgez	a5,2000007a <ADC1_IRQHandler+0x72>
+20000098:	4781                	li	a5,0
+2000009a:	b7c5                	j	2000007a <ADC1_IRQHandler+0x72>
