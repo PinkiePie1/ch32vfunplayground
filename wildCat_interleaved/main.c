@@ -268,7 +268,7 @@ static void Cease_Output()
     TIM2->CTLR1 &= ~TIM_CEN;
     TIM1->CTLR1 &= ~TIM_CEN;
     TIM2->CH4CVR = 0;
-    GPIOD->BCR = 1<<7;//PD7需要手动关掉以防万一。
+    GPIOA->BCR = 1<<2;//PA2需要手动关掉以防万一。
     NVIC_DisableIRQ( ADC_IRQn );
 
 }
@@ -276,15 +276,16 @@ static void Cease_Output()
 
 int main( void )
 {
-    SystemInit(); //初始化系统时钟。
+    SystemInit();
+    //初始化系统时钟。
     //ch32fun的sdk默认跑在HSI-PLL-48mhz,外设不分频。
     GPIO_init(); //初始化外设
     ADC_init(); //初始化ADC
     DMA_init(); //初始化DMA操作器，全桥控制需要用它来控制另一对桥臂以实现相移
     TIM2_init();
     TIM1_init(); //初始化升压电路驱动
-    Soft_Start();
 
+    Soft_Start();
     uint32_t setduty = 0;
     for(;;)
     {
@@ -327,8 +328,7 @@ void ADC1_IRQHandler(void)
     CO = CO >= 128 ? 128 : CO;
     CO = CO <= 0 ? 0 : CO;
 
-    //测试用，每个都是一半输出。
-    TIM1->CH2CVR = 40UL;
+    //Setduty应该放在这，但目前先不放。
 
 
     preverror = error;
