@@ -134,10 +134,26 @@ static void DMA_init( void )
     DMA_DIR_PeripheralDST | DMA_Mode_Circular;
 
     DMA1_Channel6->CNTR = 0x0001;//数据传输数量，就一个。
-    DMA1_Channel6->PADDR = (uint32_t)&(GPIOA->BSHR);
+    DMA1_Channel6->PADDR = (uint32_t)&(GPIOA->BCR);
     //存储器和外设的地址，外设是GPIO的置位寄存器。
+    //但初始化的时候不应该输出，所以先设置为清零寄存器，这样引脚只会拉低
+    //后续在Set_duty函数中这里会在适当的时候改为可以正常输出的。
     //由于进行了搬运，会使得GPIOA其他所有GPIO都不能再被作为通用IO利用。
     DMA1_Channel6->MADDR = (uint32_t)&gpio2;
+
+}
+
+/* 设置占空比。
+ * 如果占空比小于6的话就直接关掉第三个输出。
+ */
+
+static void Set_duty(uint32_t duty)
+{
+    //如果Duty小于6，则DMA不会拉高PA2，否则会。
+    DMA1_Channel6->PADDR = (duty>=6) ? (uint32_t)&(GPIOA->BSHR) : (uint32_t)&(GPIOA->BCR);
+    TIM2->CH4CVR = duty;
+    TIM1->CH2CVR = duty;
+    TIM1->CH4CVR = 190+duty;
 
 }
 
@@ -206,8 +222,7 @@ static void TIM1_init( void )
 
     TIM1->CCER |= TIM_CC2E;//开启通道2输出到引脚
 
-   // TIM1->CH1CVR = 96+40+15UL; //让TIM2在三分之一相移之后启动
-    TIM1->CH2CVR = 40;    //这里是直出
+    TIM1->CH2CVR = 0UL;    //这里是直出
     TIM1->CH3CVR = 190UL; //CH3是拉高，起点在三分之二，相当于240相移
     TIM1->CH4CVR = 190+1UL; //CH4是拉低
 
@@ -230,11 +245,13 @@ static void TIM1_init( void )
 static void Soft_Start()
 {
     //软启动过程，以低占空比启动直到输出电压足够。
-    TIM1->CTLR1 |= TIM_CEN;
-    TIM1->CH2CVR = 0;
     NVIC_DisableIRQ( ADC_IRQn );
-    TIM1->CH2CVR = 5;
+    TIM2->CNT = 129UL;
+    TIM1->CTLR1 |= TIM_CEN; //开启PWM输出
+    Set_duty(7);
     while(ADC1->RDATAR < 30);
+    Set_duty(15);
+    while(ADC1->RDATAR < 60);
     NVIC_EnableIRQ( ADC_IRQn );
 }
 
@@ -268,12 +285,13 @@ int main( void )
     TIM1_init(); //初始化升压电路驱动
     Soft_Start();
 
-
+    uint32_t setduty = 0;
     for(;;)
     {
-        Delay_Ms(2000);
-     // Cease_Output();
-        Delay_Ms(2000);
+        setduty+=10;
+        setduty = ( setduty>80 ) ? 0 : setduty;
+        Set_duty(setduty);
+        Delay_Ms(200);
     }
 
 }
