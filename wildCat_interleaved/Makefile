@@ -1,4 +1,4 @@
-all : cv_build
+all : cv_flash
 
 TARGET:=main
 
