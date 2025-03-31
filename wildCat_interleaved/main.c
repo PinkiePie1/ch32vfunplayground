@@ -257,10 +257,10 @@ static void Soft_Start()
 
 /**
  *
- * @brief 关掉H桥和升压，停止输出。
+ * @brief 停止输出。
  *
  *
- * @note PD2是DMA控制的，光是关掉计数器还不够。
+ * @note PA2是DMA控制的，光是关掉计数器还不够。
  */
 
 static void Cease_Output()
@@ -297,9 +297,7 @@ int main( void )
 
 }
 
-//ADC的中断处理函数
-
-
+//ADC的中断处理函数，也是PID环路所在。
 void ADC1_IRQHandler(void)
 {
     ADC1->STATR = 0;//清空标志位
