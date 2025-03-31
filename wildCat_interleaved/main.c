@@ -164,7 +164,8 @@ static void TIM2_init( void )
     //数据手册中的描述可能有误，产生的是输出而不是输入。
 
     TIM2->PSC = 0x0000;//不分频，48Mhz为tim2时钟
-    TIM2->ATRLR = (uint32_t)288;//周期为160次计数，因此为300khz输出。
+    TIM2->CNT = 129UL;//由于启动存在延时，这里的初始值比较魔法。
+    TIM2->ATRLR = (uint32_t)288;//周期288，也是166khz。
 
     TIM2->CH4CVR = (uint32_t)40;//开始占空比为0
 
@@ -187,27 +188,25 @@ static void TIM1_init( void )
     RCC->APB2PRSTR &= ~RCC_APB2Periph_TIM1;
 
     TIM1->CTLR1 |= TIM_ARPE;
-    TIM1->CTLR2 |= TIM_MMS_2;
-    //Channel1作为触发输出（TRGO）
+    TIM1->CTLR2 |= TIM_MMS_0;
+    //启动事件触发输出（TRGO）
     TIM1->DMAINTENR |= TIM_TDE | TIM_CC4DE | TIM_CC3DE;//开启CH4和CH3的DMA
 
     TIM1->PSC = 0x0001 - 1;//不分频，跑在48Mhz
     TIM1->ATRLR = 288UL;
     //288就是跑在166khz，交错三倍频对于flyback就是500khz。
 
-    TIM1->CHCTLR1 |=    TIM_OC1M |
-                      ( TIM_OC2M_2 | TIM_OC2M_1 ) |
+    TIM1->CHCTLR1 |=  ( TIM_OC2M_2 | TIM_OC2M_1 ) |
                         TIM_OC1PE | TIM_OC2PE;
     TIM1->CHCTLR2 |=  ( TIM_OC3M_2 | TIM_OC3M_1 ) |
                       ( TIM_OC4M_2 | TIM_OC4M_1 ) |
                         TIM_OC3PE | TIM_OC4PE;
     //四个通道除了CH1均为PWM模式1，在达到计数值前为有效电平,均开启预装载，
-    //配置为输出。CH1因为是发TRGO信号的，所以是到计数值才为
-    //有效电平。
+    //配置为输出。
 
     TIM1->CCER |= TIM_CC2E;//开启通道2输出到引脚
 
-    TIM1->CH1CVR = 96+40+15UL; //让TIM2在三分之一相移之后启动
+   // TIM1->CH1CVR = 96+40+15UL; //让TIM2在三分之一相移之后启动
     TIM1->CH2CVR = 40;    //这里是直出
     TIM1->CH3CVR = 190UL; //CH3是拉高，起点在三分之二，相当于240相移
     TIM1->CH4CVR = 190+1UL; //CH4是拉低
