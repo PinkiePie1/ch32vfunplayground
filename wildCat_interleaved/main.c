@@ -328,7 +328,7 @@ void ADC1_IRQHandler( void )
     //这里才是设定值
     //因为是乘法所以很慢
     //后续考虑换ch32v002或者其他带硬件乘法的
-    int32_t setpoint_vdd = ( vccval>>2 ) + ( vccval>>3 ) + ( vccval>>6 );
+    int32_t setpoint_vdd = vccval + ( vccval>>2 ) + ( vccval>>3 ) + ( vccval>>6 );
     //如果需要任意设定值，这里应该是 (设定值*vccval/242)
     //一种近似是(360*vccval)>>8。
     //如果是5V稳定，vccval=242，这里360被处理过后会变成344，167.9V
