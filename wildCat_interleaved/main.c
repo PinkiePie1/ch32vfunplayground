@@ -285,14 +285,13 @@ int main( void )
     TIM2_init();
     TIM1_init(); //初始化升压电路驱动
 
-    Soft_Start();
-    uint32_t setduty = 0;
+    
     for(;;)
     {
-        setduty+=10;
-        setduty = ( setduty>80 ) ? 0 : setduty;
-        Set_duty(setduty);
-        Delay_Ms(200);
+    	Soft_Start();
+        Delay_Ms(2000);
+        Cease_Output();
+        Delay_Ms(2000);
     }
 
 }
@@ -316,18 +315,17 @@ void ADC1_IRQHandler(void)
     intergal += (error>>2); //积分系数为0.25
 
     //控制积分上下限
-    intergal = intergal > 160 ? 160 : intergal;
+    intergal = intergal > 90 ? 90 : intergal;
     intergal = intergal < -20 ? -20 :intergal;
 
-    CO = (error<<2) + intergal + ( (error-preverror)<<1 );
-    //比例系数为4,微分系数为2
+    CO = (error) + intergal + ( (error-preverror)<<1 );
+    //比例系数为1,微分系数为2
 
     //限制CO上下限。
-    CO = CO >= 128 ? 128 : CO;
+    CO = CO >= 80 ? 80 : CO;
     CO = CO <= 0 ? 0 : CO;
 
-    //Setduty应该放在这，但目前先不放。
-
+    Set_duty(CO);
 
     preverror = error;
 
