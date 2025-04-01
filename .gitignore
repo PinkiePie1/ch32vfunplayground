@@ -10,3 +10,4 @@ wildCat/wildCat.map
 *.hex
 *.elf
 *.bin
+generated__.ld
