@@ -14,14 +14,20 @@ uint32_t adcinterrupttimes = 0;
  *  最后一个通道则是输出TRGO让第二个timer在正确的时候启动，第二个timer
  *  直出就行。
  *  单次模式也有说法，即用一个定时器触发另一个定时器的单次模式。但不论
- *  如何都很难绕开DMA。
+ *  如何都很难绕开DMA。dma最小要六个时钟周期，所以无法实现0占空比输出。
+ *  这一点上使用其他的单片机，比如cw32l031或许会更好。或者干脆用通用系列
+ *  定时器多，同时启动就好。
  */
 
 
-
+//声明中断处理函数
+//由于函数放在了RAM里加快运行速度，编译器会报警
+//暂时不需要为此担心。但后续应在串口里堵死
+//可能的不安全因素，比如采用静态内存分配并限制串口信息长度
 void ADC1_IRQHandler(void)
 	__attribute__((interrupt))
 	__attribute__((section(".srodata")));
+
 
 
 /**
@@ -88,6 +94,7 @@ static void ADC_init( void )
     ADC1->CTLR2 |= ADC_EXTTRIG |ADC_EXTSEL_0|ADC_EXTSEL_1;
     //开启TRGO触发转换功能，开启注入通道软件使能
 
+    //开启ADC
     ADC1->CTLR2 |= ADC_ADON;
 
     //校准ADC
@@ -95,10 +102,6 @@ static void ADC_init( void )
     while(ADC1->CTLR2 & ADC_RSTCAL);
     ADC1->CTLR2 |= ADC_CAL;
     while(ADC1->CTLR2 & ADC_CAL);
-
-    //先不开启中断，这样就不会操作TIM2导致boost启动。
-    //NVIC_EnableIRQ( ADC_IRQn );
-
 }
 
 /*
@@ -145,6 +148,7 @@ static void DMA_init( void )
 
 /* 设置占空比。
  * 如果占空比小于6的话就直接关掉第三个输出。
+ * 没有限制上限，需要在程序里限制。
  */
 
 static void Set_duty(uint32_t duty)
@@ -183,7 +187,7 @@ static void TIM2_init( void )
     TIM2->CNT = 129UL;//由于启动存在延时，这里的初始值比较魔法。
     TIM2->ATRLR = (uint32_t)288;//周期288，也是166khz。
 
-    TIM2->CH4CVR = (uint32_t)40;//开始占空比为0
+    TIM2->CH4CVR = (uint32_t)0;//开始占空比为0
 
     TIM2->BDTR |= TIM_MOE;
 
@@ -212,12 +216,11 @@ static void TIM1_init( void )
     TIM1->ATRLR = 288UL;
     //288就是跑在166khz，交错三倍频对于flyback就是500khz。
 
-    TIM1->CHCTLR1 |=  ( TIM_OC2M_2 | TIM_OC2M_1 ) |
-                        TIM_OC1PE | TIM_OC2PE;
+    TIM1->CHCTLR1 |=  ( TIM_OC2M_2 | TIM_OC2M_1 ) | TIM_OC2PE;
     TIM1->CHCTLR2 |=  ( TIM_OC3M_2 | TIM_OC3M_1 ) |
                       ( TIM_OC4M_2 | TIM_OC4M_1 ) |
                         TIM_OC3PE | TIM_OC4PE;
-    //四个通道除了CH1均为PWM模式1，在达到计数值前为有效电平,均开启预装载，
+    //均为PWM模式1，在达到计数值前为有效电平,均开启预装载，
     //配置为输出。
 
     TIM1->CCER |= TIM_CC2E;//开启通道2输出到引脚
@@ -225,8 +228,6 @@ static void TIM1_init( void )
     TIM1->CH2CVR = 0UL;    //这里是直出
     TIM1->CH3CVR = 190UL; //CH3是拉高，起点在三分之二，相当于240相移
     TIM1->CH4CVR = 190+1UL; //CH4是拉低
-
-    TIM1->SWEVGR |= TIM_UG;//产生更新事件
 
     TIM1->BDTR = TIM_MOE;//使能输出。
 
@@ -236,10 +237,10 @@ static void TIM1_init( void )
 /**
  * @brief 软启动升压电路。在初始化 ADC 和 HV 驱动器之后需要使用这个函数启动升压电路。
  *
- * 该函数固定占空比2.5%，确保输出电压逐渐上升到足够的水平。
- * 启动过程中会禁用 ADC 中断，所以不是PID。
+ * 该函数固定占空比等待输出电压逐渐上升到足够的水平。
+ * 启动过程中会禁用 ADC 中断，不是PID控制。
  *
- * @note 这一步的目标电压是固定的15V，可调节while的条件以更改。
+ * @note 如果输出没接东西，程序会卡死在这里。
  *
  */
 static void Soft_Start()
@@ -247,11 +248,14 @@ static void Soft_Start()
     //软启动过程，以低占空比启动直到输出电压足够。
     NVIC_DisableIRQ( ADC_IRQn );
     TIM2->CNT = 129UL;
+    TIM1->CNT = 0UL;
+    Set_duty(3);
     TIM1->CTLR1 |= TIM_CEN; //开启PWM输出
-    Set_duty(7);
     while(ADC1->RDATAR < 30);
-    Set_duty(15);
+    Set_duty(7);
     while(ADC1->RDATAR < 60);
+    Set_duty(10);
+    while(ADC1->RDATAR < 90);
     NVIC_EnableIRQ( ADC_IRQn );
 }
 
@@ -281,7 +285,7 @@ int main( void )
     //ch32fun的sdk默认跑在HSI-PLL-48mhz,外设不分频。
     GPIO_init(); //初始化外设
     ADC_init(); //初始化ADC
-    DMA_init(); //初始化DMA操作器，全桥控制需要用它来控制另一对桥臂以实现相移
+    DMA_init(); //初始化DMA操作器，用于实现相移输出。
     TIM2_init();
     TIM1_init(); //初始化升压电路驱动
 
@@ -295,16 +299,45 @@ int main( void )
     }
 
 }
+/*
+//快速乘法，比默认的*稍微快一点。
+static inline uint32_t fastMul(uint32_t bigval, uint32_t smallval)
+{
+	uint32_t ret = 0;
+	uint32_t multiplicand = smallval;
+	uint32_t mutliplicant = bigval;
+	do
+	{
+		if( multiplicand & 1 )
+			ret += mutliplicant;
+		mutliplicant<<=1;
+		multiplicand>>=1;
+	} while( multiplicand );
+	return ret;
+}
+*/
 
 //ADC的中断处理函数，也是PID环路所在。
-void ADC1_IRQHandler(void)
+void ADC1_IRQHandler( void )
 {
     ADC1->STATR = 0;//清空标志位
     adcval =  ( adcval >> 1 ) + ((ADC1->RDATAR) >> 1);
     vccval =  ( vccval >> 1 ) + ((ADC1->IDATAR4)>> 1);
     //读取ADC值，这里是一半旧值加一半新值，滤波
 
-    int32_t setpoint_vdd = (385*vccval)>>8; //这里才是真的设定值。
+    //这里才是设定值
+    //因为是乘法所以很慢
+    //后续考虑换ch32v002或者其他带硬件乘法的
+    int32_t setpoint_vdd = ( vccval>>2 ) + ( vccval>>3 ) + ( vccval>>6 );
+    //如果需要任意设定值，这里应该是 (设定值*vccval/242)
+    //一种近似是(360*vccval)>>8。
+    //如果是5V稳定，vccval=242，这里360被处理过后会变成344，167.9V
+    //如果是3v3稳定，vccval=372，则会变成523，对应168.75v
+    //但如果设定值不需要动态变化，我们就能把乘法部分去掉。
+    //目前，这里设定值是vccval*1.4，即目标电压为1.2*1.4*100=168V。
+    //另一方面，我们也可以直接把vccval的不同移位加一起，一定程度上改变输出电压
+    //即使这样的改变不是线性的，也可以由串口的另一端来负担。
+    
     /*PI控制器部分。*/
 
     int32_t error = setpoint_vdd-adcval;//计算误差
@@ -312,13 +345,13 @@ void ADC1_IRQHandler(void)
     static int32_t intergal;//积分项
     static int32_t preverror;//上一次的误差
 
-    intergal += (error>>2); //积分系数为0.25
+    intergal += ( error>>2 ); //积分系数为0.25
 
     //控制积分上下限
     intergal = intergal > 90 ? 90 : intergal;
     intergal = intergal < -20 ? -20 :intergal;
 
-    CO = (error) + intergal + ( (error-preverror)<<1 );
+    CO = ( error>>0 ) + intergal + ( (error-preverror)<<1 );
     //比例系数为1,微分系数为2
 
     //限制CO上下限。
