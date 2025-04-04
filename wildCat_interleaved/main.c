@@ -8,6 +8,7 @@
 uint16_t adcval = 0;
 uint32_t vccval = 0;
 uint32_t adcinterrupttimes = 0;
+int32_t controloutput=0;
 
 /*
  *  总的思路是第一个timer一个通道直出，另外两个通道控制DMA。
@@ -247,12 +248,17 @@ static void Soft_Start()
     NVIC_DisableIRQ( ADC_IRQn );
     TIM2->CNT = 129UL;
     TIM1->CNT = 0UL;
-    Set_duty(3);
+
+
+	
+	Set_duty(3);
     TIM1->CTLR1 |= TIM_CEN; //开启PWM输出
+	Delay_Us(1500);
     while(ADC1->RDATAR < 30);
-    Set_duty(7);
+    Set_duty(8);
     while(ADC1->RDATAR < 60);
     Set_duty(10);
+    
     while(ADC1->RDATAR < 90);
     NVIC_EnableIRQ( ADC_IRQn );
 }
@@ -286,14 +292,16 @@ int main( void )
     DMA_init(); //初始化DMA操作器，用于实现相移输出。
     TIM2_init();
     TIM1_init(); //初始化升压电路驱动
+    //printf("Init complete. Soft start.\n");
 
-    
+   Soft_Start();
+    //TIM1->CTLR1 |= TIM_CEN; //开启PWM输出
+     //NVIC_EnableIRQ( ADC_IRQn );
     for(;;)
-    {
-    	Soft_Start();
+    {    	
         Delay_Ms(2000);
-        Cease_Output();
-        Delay_Ms(2000);
+        printf("alive. PWM output at:%ld, ADC measurement:%ld, idata: %ld\n",TIM1->CH2CVR,ADC1->RDATAR,ADC1->IDATAR1);
+	//	printf("control output:%ld.\n",controloutput);
     }
 
 }
@@ -320,7 +328,7 @@ void ADC1_IRQHandler( void )
 {
     ADC1->STATR = 0;//清空标志位
     adcval =  ( adcval >> 1 ) + ((ADC1->RDATAR) >> 1);
-    vccval =  ( vccval >> 1 ) + ((ADC1->IDATAR4)>> 1);
+    vccval =  ( vccval >> 1 ) + ((ADC1->IDATAR1)>> 1);
     //读取ADC值，这里是一半旧值加一半新值，滤波
 
     //这里才是设定值
@@ -349,7 +357,7 @@ void ADC1_IRQHandler( void )
     intergal = intergal > 90 ? 90 : intergal;
     intergal = intergal < -20 ? -20 :intergal;
 
-    CO = ( error>>0 ) + intergal + ( (error-preverror)<<1 );
+    CO = ( error>>2 ) + intergal + ( (error-preverror)<<1 );
     //比例系数为1,微分系数为2
 
     //限制CO上下限。
@@ -357,6 +365,7 @@ void ADC1_IRQHandler( void )
     CO = CO <= 0 ? 0 : CO;
 
     Set_duty(CO);
+    controloutput =CO;
 
     preverror = error;
 
